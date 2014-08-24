@@ -1,16 +1,20 @@
 //////////////////////////////////////////////////////////////////////////
 //File : Only Vector2 ( Only Math Lib )
 //Author : Zipxin  [China]
+//E-mail: zipxin@163.com
 //Project : OnlyGameEngine
 //////////////////////////////////////////////////////////////////////////
-#ifndef __OM_VECTOR2_H__
-#define __OM_VECTOR2_H__
+#ifndef _ONLY_VECTOR2_H_
+#define _ONLY_VECTOR2_H_
 
-#include "OnlyGameDefine.h"
+#if _MSC_VER > 1000
+#pragma once
+#endif 
+
+#include "../OInclude/Common/OnlyGameDefine.h"
 
 #include "OMathUtil.h"
 #include <stdio.h>
-#include <assert.h>
 
 //////////////////////////////////////////////////////////////////////////
 //Construct
@@ -29,7 +33,6 @@
 
 //Declare/////////////////////////////////////////////////////////////////
 class OVector2;
-
 
 //////////////////////////////////////////////////////////////////////////
 //Global
@@ -57,7 +60,9 @@ public :
 
 	inline OVector2(const OVector2 &a):x(a.x),y(a.y){}
 
-	inline OVector2(float32 f):x(f),y(f){}
+	explicit inline OVector2(float32 f):x(f),y(f){}
+
+	inline OVector2(float32 *f):x(f[0]),y(f[1]){}
 
 
 	inline OVector2(int32 x, int32 y)
@@ -66,42 +71,42 @@ public :
 		elem_i[1] = y;
 	}
 
-	inline OVector2( uint32 value )
+	explicit inline OVector2( uint32 value )
 	{
 		elem_i[0] = value;
 		elem_i[1] = value;
 	}
 
-
 	//////////////////////////////////////////////////////////////////////////
-	inline void Set(float x, float y)
+	inline void Setf(float x, float y)
 	{
 		this->x = x;
 		this->y = y;
 	}
 
-	inline void Set(float value)
+	inline void Setf(float value)
 	{
 		this->x = value;
 		this->y = value;
 	}
 
-	inline void Set(float *p)
+	inline void Setf(float *p)
 	{
 		this->x = p[0];
 		this->y = p[1];
 	}
 
-	inline void SetX(float x)
+	inline void SetXf(float x)
 	{
 		this->x = x;
 	}
+	inline void SetYf(float y)
+	{
+		this->y = y;
+	}
 
 	inline float32 GetXf() { return x; }
-
 	inline float32 GetYf() { return y; }
-
-
 
 	inline OVector2 GetXXf(void)
 	{
@@ -109,72 +114,98 @@ public :
 		return result;
 	}
 
-
 	inline OVector2 GetYYf(void)
 	{
 		OVector2 result(y);
 		return result;
 	}
-
-
-	inline void SetY(float y)
-	{
-		this->y = y;
-	}
-
-	
-	inline void SetXY(float *p)
-	{
-		x = p[0];
-		y = p[1];
-	}
-	//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 	//存放在数组p中，值为float类型
-	inline void StoreToArrayf(float *p)
+	inline void StoreToArrayf(float *p) const 
 	{
 		p[0] = x;
 		p[1] = y;
 	}
 
-	inline void StoreToArrayf(int *p)
+	inline void StoreToArrayf(int *p) const 
 	{
 		p[0] = (int)x;
 		p[1] = (int)y;
 	}
 
-	inline void StoreToArrayi(int *p)
+	inline void StoreToArrayi(int *p) const 
 	{
 		p[0] = elem_i[0];
 		p[1] = elem_i[1];
 	}
-
-	//////////////////////////////////////////////////////////////////////////
-
-	inline OVector2& InvertSign()
+//////////////////////////////////////////////////////////////////////////
+	inline OVector2& InvertSign() 
 	{
 		x = -x;
 		y = -y;
 		return *this;
 	}
 
-	inline float32 Length()
+	inline float32 Length() const
 	{
 		float32 res = 0.0f;
-		float32 sum = x*x + y*y;// + w*w;
+		float32 sum = x*x + y*y;
 		res = OSqrt(sum);
 		return res;
 	}	
+
+	//清0操作
+	inline void Clear()
+	{
+		this->x = 0.0f;
+		this->y = 0.0f;
+	}
 
 	inline float32 LengthNotSqrt()
 	{
 		return x*x + y*y;
 	}	
 
+	/** 向量点乘 */
+	inline float32  Dot(const OVector2& v) const 
+	{
+		return x*v.x + y*v.y;
+	}
 
+	/** 计算x轴分量与y轴分量的平均值 */
+	inline float32 Average() const	
+	{
+		return (x + y) * 0.5f;
+	}
+
+	/** 求原向量的正交向量 内积为0 相当于垂直向量*/
+	inline OVector2 Perpendicular(void) const 
+	{ 
+		return OVector2 (-y, x);
+	}
+
+//Debug
 	inline void Display()
 	{
 		printf("Vector 2: ( %5.2f,%5.2f )\n", x, y);
 	}
+
+	inline const char* ToCString()
+	{
+		char *buf = new char[128];
+		memset(buf, 0 , 128);
+		sprintf_s(buf, 128, "Vector 2: ( %5.2f,%5.2f )\n", x, y);
+		return buf;
+	}
+
+	inline const wchar_t* ToWString()
+	{
+		wchar_t *buf = new wchar_t[128];
+		memset(buf, 0 , 128);
+		swprintf_s(buf, 128, L"Vector 2: ( %5.2f,%5.2f )\n", x, y);
+		return buf;
+	}
+
 
 	//将元素绝对值化
 	inline OVector2 &Abs()
@@ -188,13 +219,12 @@ public :
 	{
 		float32 len = Length();
 		float32 returnlen = len;
-		if(len > 0.0f )
+		if( OEquals(len, 1.0) || OEquals(len, 0.0f) || len < 0.0f )
 		{
-			len = 1.0f / len;
-		}else
-		{
-			len = 0.0f;
+			return returnlen;
 		}
+
+		len = 1.0f / len;
 		x *= len;
 		y *= len;
 		return returnlen;
@@ -211,17 +241,46 @@ public :
 	inline void Nomarlize()
 	{
 		float32 len = Length();
-		if(len > 0.0f )
+		if( OEquals(len, 1.0) || OEquals(len, 0.0f) || len < 0.0f )
 		{
-			len = 1.0f / len;
-		}else
-		{
-			len = 0.0f;
+			return ;
 		}
+
+		len = 1.0f / len;
 		x *= len;
 		y *= len;
 	}
 
+	//const OVector2& Nomarlized() const
+	const OVector2 Nomarlized() const
+	{
+		float32 len = Length();
+		if( OEquals(len, 1.0) || OEquals(len, 0.0f) || len < 0.0f )
+		{
+			return OVector2::ZERO;
+		}
+
+		len = 1.0f / len;
+		//x *= len;
+		//y *= len;
+
+		return OVector2(x*len, y*len);
+	}
+
+	inline bool  IsZero()
+	{
+		return *this == OVector2::ZERO;
+	}
+
+	inline float32 MaxValuef()
+	{
+		return x > y ? x : y;
+	}
+
+	inline float32 MinValuef()
+	{
+		return x < y ? x : y;
+	}
 	//饱和处理
 	inline OVector2 &Saturate(void)
 	{
@@ -256,6 +315,60 @@ public :
 		return *this;
 	}
 
+	inline bool Equals(const OVector2 &rhl) const
+	{
+		return OEquals(x, rhl.x) && OEquals(y, rhl.y);
+	}
+
+	/** 重载<<运算符，可以将二维向量按照Vector2(x,y)的格式输出 */
+	inline friend std::ostream& operator <<	( std::ostream& o, const OVector2& v )
+	{
+		o << "Vector2(" << v.x << ", " << v.y <<  ")";
+		return o;
+	}
+
+
+	
+	/** 得到原向量旋转一定角度后的新向量 \n
+	 *	@param [float] radian: 旋转的角度，单位是弧度
+	 */
+	inline OVector2 GetRotatedInRadian(float radian)
+	{
+		float cosD = cosf(radian);
+		float sinD = sinf(radian);
+
+		OVector2 result;
+		result.x = x*cosD + y*sinD;
+		result.y = y*cosD + x*sinD;
+
+		return result;
+	}
+
+	/** 得到原向量旋转一定角度后的新向量 \n
+	*	@param [float] degree: 旋转的角度，单位是角度
+	*/
+	inline OVector2 GetRotatedInDegree(float32 degree)
+	{
+		float32 radian = DEG_TO_RAD * degree;
+		return GetRotatedInRadian(radian);
+	}
+
+	/** 得到两个向量之间的夹角，从src到dest \n
+	*	@param [Vector2] src: 原方向
+	*	@param [Vector2] dest: 目标方向
+	*	@param [float] : 旋转角度，(-PI,PI],左手法则
+	*/
+	static float GetRadianBetween2Vector2(OVector2 src, OVector2 dest);
+
+
+	/** 判断原向量是否长度为0 */
+	inline bool IsZeroLength(void) const
+	{
+		if (Length() < EPSILON8)
+			return true;
+		else return false;
+	}
+
 	//////////////////////////////////////////////////////////////////////////
 	/*Operator*/
 
@@ -271,24 +384,23 @@ public:
 		return g_Vector2f_One;
 	}
 
+	static const OVector2 ZERO;
+	/// (-1,0) vector.
+	static const OVector2 LEFT;
+	/// (1,0) vector.
+	static const OVector2 RIGHT;
+	/// (0,1) vector.
+	static const OVector2 UP;
+	/// (0,-1) vector.
+	static const OVector2 DOWN;
+	/// (1,1) vector.
+	static const OVector2 ONE;
 
-
+	static const OVector2 X_AXIS;		/// (1,0)
+	static const OVector2 Y_AXIS;		/// (0,1)
+	static const OVector2 NEG_X_AXIS;	/// (-1,0)
+	static const OVector2 NEG_Y_AXIS;	/// (0,-1)
 public:
-
-	inline OVector2& operator *= (float32 value)
-	{
-		x *= value;
-		y *= value;
-		return *this;
-	}
-	inline OVector2 operator =(const OVector2 &value)
-	{
-		x = value.x;
-		y = value.y;
-		return *this;
-	}
-
-
 	inline OVector2 &operator+=(OVector2 &rhs)
 	{
 		x += rhs.x;
@@ -303,29 +415,70 @@ public:
 		return *this;
 	}
 
+	inline OVector2& operator *= (float32 value)
+	{
+		x *= value;
+		y *= value;
+		return *this;
+	}
+
+	inline OVector2& operator *=(const OVector2 &value)
+	{
+		x *= value.x;
+		y *= value.y;
+		return *this;
+	}
+
+	inline OVector2& operator -=(const OVector2 &value)
+	{
+		x -= value.x;
+		y -= value.y;
+		return *this;
+	}
+
+
+
+	inline OVector2 operator =(const OVector2 &value)
+	{
+		x = value.x;
+		y = value.y;
+		return *this;
+	}
+
+	inline OVector2 &operator/=(const OVector2 &value)
+	{
+		assert(value.x != 0.0f);
+		assert(value.y != 0.0f);
+		x /= value.x;
+		y /= value.y;
+		return *this;
+	}
+
+	inline OVector2 &operator/=(float32 value)
+	{
+		assert(value != 0.0f);
+		float32 temp = 1.0f / value;
+		x *= temp;
+		y *= temp;
+		return *this;
+	}
+	
+
+
 	inline OVector2 &operator=(float32 value)
 	{
-		Set(value);
+		Setf(value);
 		return *this;
 	}
 
 	inline bool operator ==(const OVector2 &value) const 
 	{
-		return x==value.x && y == value.y ;
+		return OEquals( x, value.x) && OEquals( y, value.y);
 	}
 
 	inline bool operator !=(const OVector2 &value) const 
 	{
 		return x!=value.x||y!=value.y;
-	}
-
-	inline OVector2 operator -=(const OVector2 &value) const 
-	{
-		OVector2 result;
-		result.x = x - value.x;
-		result.y = y - value.y;
-
-		return result;
 	}
 
 
@@ -336,12 +489,9 @@ public:
 	}
 
 
-	inline OVector2 &operator/=(float32 value)
-	{
-		x /= value;
-		y /= value;
-		return *this;
-	}
+	/** 初始化，传入两个数分别赋给x，y */
+	inline void operator() (float32 nx, float32 ny)	
+	{x = nx; y = ny;}	
 
 
 	inline float32 &operator[](int32 index)
@@ -424,6 +574,12 @@ inline OVector2 operator*(const OVector2 &v, const float32 f)
 inline float Vec2_Dotf(const OVector2 &a, const OVector2 &b)
 {
 	float result = a.x * b.x + a.y * b.y ;
+	return result;
+}
+
+inline float Vec2_DotAbsf(const OVector2 &a, const OVector2 &b)
+{
+	float result = OAbs(a.x * b.x) + OAbs(a.y * b.y);
 	return result;
 }
 

@@ -2,14 +2,24 @@
 //File : Only Matrix4x4 ( Only Math Lib)
 //Author : Zipxin  [China]
 //Project : OnlyGameEngine
+//E-mail: zipxin@163.com
+//Note:   使用行向量
 //////////////////////////////////////////////////////////////////////////
-#ifndef __OM_MATRIX4X4_H__
-#define __OM_MATRIX4X4_H__
+#ifndef _ONLY_MATRIX4X4_H_
+#define _ONLY_MATRIX4X4_H_
 
-#include "OnlyGameDefine.h"
+#include "../OInclude/Common/OnlyGameDefine.h"
 
-#include "OVector4.h"
+//Declare/////////////////////////////////////////////////////////////////
+class OMatrix4x4;
+class OVector4;
+class OVector3;
+class OMatrix3x3;
 
+
+#include "../OInclude/Math/OVector4.h"
+#include "../OInclude/Math/OVector3.h"
+#include "../OInclude/Math/OMatrix3x3.h"
 
 //////////////////////////////////////////////////////////////////////////
 //Construct
@@ -26,9 +36,6 @@
 //////////////////////////////////////////////////////////////////////////
 
 
-//Declare/////////////////////////////////////////////////////////////////
-class OMatrix4x4;
-
 //Global//////////////////////////////////////////////////////////////////
 extern OMatrix4x4 g_Matrix4x4_Identity;
 extern OMatrix4x4 g_Matrix4x4_Zero;
@@ -36,7 +43,7 @@ extern OMatrix4x4 g_Matrix4x4_Zero;
 //Define
 class OMatrix4x4
 {
-private:
+public:
 
 	union 
 	{
@@ -59,6 +66,13 @@ private:
 	};
 
 public:
+	static const OMatrix4x4 ZERO;
+    static const OMatrix4x4 IDENTITY;
+
+    /** Useful little matrix which takes 2D clipspace {-1, 1} to {0,1}
+        and inverts the Y. */
+    static const OMatrix4x4 CLIPSPACE2DTOIMAGESPACE;
+
 	inline OMatrix4x4(){}
 	inline OMatrix4x4(
 		float32 f00, float32 f01, float32 f02, float32 f03,
@@ -83,14 +97,46 @@ public:
 		vec3 = m.vec3;
 		vec4 = m.vec4;
 	}
-/*
-	explicit OMatrix4x4(const OMatrix3x3 &m) {
-		vec1 = m.vec1;
-		vec2 = m.vec2;
-		vec3 = m.vec3;
-		vec4.Set(0.0f);
+
+	explicit OMatrix4x4(const OMatrix3x3& matrix) :
+		m11(matrix.m11),
+		m12(matrix.m12),
+		m13(matrix.m13),
+		m14(0.0f),
+		m21(matrix.m21),
+		m22(matrix.m22),
+		m23(matrix.m23),
+		m24(0.0f),
+		m31(matrix.m31),
+		m32(matrix.m32),
+		m33(matrix.m33),
+		m34(0.0f),
+		m41(0.0f),
+		m42(0.0f),
+		m43(0.0f),
+		m44(1.0f)
+	{
 	}
-*/
+	explicit OMatrix4x4(const float32* data) :
+		m11(data[0]),
+		m12(data[1]),
+		m13(data[2]),
+		m14(data[3]),
+		m21(data[4]),
+		m22(data[5]),
+		m23(data[6]),
+		m24(data[7]),
+		m31(data[8]),
+		m32(data[9]),
+		m33(data[10]),
+		m34(data[11]),
+		m41(data[12]),
+		m42(data[13]),
+		m43(data[14]),
+		m44(data[15])
+	{
+	}
+
 	~OMatrix4x4(){};
 
 //////////////////////////////////////////////////////////////////////////
@@ -101,7 +147,6 @@ public:
 		m31 = m32 = m33 = m34 = 0.0f;
 		m41 = m42 = m43 = m44 = 0.0f;
 	}
-
 
 	inline void SetRow(const int32 row, OVector4 &vec)
 	{
@@ -140,10 +185,10 @@ public:
 		OVector4 vec;
 		float *p = &m11 + column;
 
-		vec.SetX(p[0]);
-		vec.SetY(p[4]);
-		vec.SetZ(p[8]);
-		vec.SetW(p[12]);
+		vec.SetXf(p[0]);
+		vec.SetYf(p[4]);
+		vec.SetZf(p[8]);
+		vec.SetWf(p[12]);
 		return vec;
 	}
 
@@ -153,12 +198,30 @@ public:
 		OVector4 vec;
 		const float *p = &m11 + column;
 
-		vec.SetX(p[0]);
-		vec.SetY(p[4]);
-		vec.SetZ(p[8]);
-		vec.SetW(p[12]);
+		vec.SetXf(p[0]);
+		vec.SetYf(p[4]);
+		vec.SetZf(p[8]);
+		vec.SetWf(p[12]);
 		return vec;
 	}
+
+	/** 得到4*4矩阵右方向的标准基,结果是个单位向量 */
+	OVector3 GetRight() const { return OVector3(ele_f[0][0], ele_f[0][1], ele_f[0][2]).Nomarlized(); }
+	/** 得到4*4矩阵上方向的标准基,结果是个单位向量 */
+	OVector3 GetUp() const { return OVector3(ele_f[1][0], ele_f[1][1], ele_f[1][2]).Nomarlized(); }
+	/** 得到4*4矩阵前方向的标准基,结果是个单位向量 */
+	OVector3 GetDir() const { return OVector3(ele_f[2][0], ele_f[2][1], ele_f[2][2]).Nomarlized(); }
+
+
+	/** 得到4*4矩阵右方向的非标准基,结果未被单位化 */
+	OVector3 GetRightUnnormalized() const { return OVector3(ele_f[0][0], ele_f[0][1], ele_f[0][2]); }
+	/** 得到4*4矩阵上方向的非标准基,结果未被单位化 */
+	OVector3 GetUpUnnormalized() const { return OVector3(ele_f[1][0], ele_f[1][1], ele_f[1][2]); }
+	/** 得到4*4矩阵前方向的非标准基,结果未被单位化 */
+	OVector3 GetDirUnnormalized() const { return OVector3(ele_f[2][0], ele_f[2][1], ele_f[2][2]); }
+
+	/** 得到这样一个4*4矩阵：它乘以对象矩阵后，让对象矩阵得到分别绕XYZ三轴旋转参数弧度后的效果 */
+	OMatrix4x4 RotaieXYZ_Replace(float radianX, float radianY,  float radianZ);
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -196,6 +259,47 @@ public:
 		vec4 = GetIdentityMatrix()[3];
 	}
 
+	/** 用一个3维向量来设定4*4矩阵的投影变换的值（即设定[0][3]、[1][3]、[2][3]位置的值） */
+	inline OMatrix4x4 SetProj( const OVector3& v )
+	{
+		ele_f[0][3] = v.x;
+		ele_f[1][3] = v.y;
+		ele_f[2][3] = v.z;
+		return *this;
+	}
+
+	/** 用一个3维向量来设定4*4矩阵的位移变换的值（即设定[3][0]、[3][1]、[3][2]位置的值） */
+	inline OMatrix4x4 SetOffset( const OVector3& v )
+	{
+		ele_f[3][0] = v.x;
+		ele_f[3][1] = v.y;
+		ele_f[3][2] = v.z;
+		return *this;
+	}
+
+	/** 获得4*4矩阵的投影变换的值（即[0][3]、[1][3]、[2][3]位置的值） */
+	inline OVector3 GetProj() const
+	{
+		return OVector3(ele_f[0][3], ele_f[1][3], ele_f[2][3]);
+	}
+
+
+	/** 求4*4矩阵的伴随矩阵，并作为函数返回值返回 */
+	OMatrix4x4 Adjoint() const;
+
+	/** 对4*4矩阵求其行列式值 */
+	float32 Determinant() const;
+
+	/** 对4*4矩阵求逆矩阵，返回值为逆矩阵 */
+	OMatrix4x4 Inverse() const;
+
+	/** 获得4*4矩阵的位移变换的值（即[0][3]、[1][3]、[2][3]位置的值） */
+	inline OVector3 GetOffset() const
+	{
+		return OVector3(ele_f[3][0], ele_f[3][1], ele_f[3][2]);
+	}
+
+
 	void NoRotate(void)
 	{
 		vec1 = GetIdentityMatrix()[0];
@@ -230,11 +334,40 @@ public:
 
 	void Scale_Replace(float32 x, float32 y, float32 z)
 	{
-		vec1.Set(x, 0, 0, 0);
-		vec2.Set(0, y, 0, 0);
-		vec3.Set(0, 0, z, 0);
-		vec4.Set(0, 0, 0, 1);
+		vec1.Setf(x,    0.0f, 0.0f, 0.0f);
+		vec2.Setf(0.0f, y,    0.0f, 0.0f);
+		vec3.Setf(0.0f, 0.0f, z,    0.0f);
+		vec4.Setf(0.0f, 0.0f, 0.0f, 1);
 	}
+
+	/** 整体缩放（[3][3]位置的值）    */
+	inline void Scale( const float32& scale )
+	{
+		assert(scale != 0.0f&&"除数为0！");
+		ele_f[3][3] = 1.0f / scale;
+	}
+
+	/** 用3个float变量把调用对象矩阵（无论矩阵原来是怎么样的）变成一个投影的转换矩阵，并把这个矩阵作为函数返回值 */
+	inline OMatrix4x4 Project_Replace( float t_x, float t_y, float t_z )
+	{
+		OMatrix4x4 r;
+
+		r.ele_f[0][0] = 1.0; r.ele_f[0][1] = 0.0; r.ele_f[0][2] = 0.0; r.ele_f[0][3] = t_x;
+		r.ele_f[1][0] = 0.0; r.ele_f[1][1] = 1.0; r.ele_f[1][2] = 0.0; r.ele_f[1][3] = t_y;
+		r.ele_f[2][0] = 0.0; r.ele_f[2][1] = 0.0; r.ele_f[2][2] = 1.0; r.ele_f[2][3] = t_z;
+		r.ele_f[3][0] = 0.0; r.ele_f[3][1] = 0.0; r.ele_f[3][2] = 0.0; r.ele_f[3][3] = 1.0;
+
+		return r;
+	}
+
+	inline void Project( float tx, float ty, float tz )
+	{
+		ele_f[0][0] = 1.0; ele_f[0][1] = 0.0; ele_f[0][2] = 0.0; ele_f[0][3] = tx;
+		ele_f[1][0] = 0.0; ele_f[1][1] = 1.0; ele_f[1][2] = 0.0; ele_f[1][3] = ty;
+		ele_f[2][0] = 0.0; ele_f[2][1] = 0.0; ele_f[2][2] = 1.0; ele_f[2][3] = tz;
+		ele_f[3][0] = 0.0; ele_f[3][1] = 0.0; ele_f[3][2] = 0.0; ele_f[3][3] = 1.0;
+	}
+
 
 //translate
 	void Translate(float32 x, float32 y, float32 z)
@@ -262,15 +395,16 @@ public:
 	}
 
 //rotate
-	void RotateX_Replace( const float radian )
+	OMatrix4x4& RotateX_Replace( const float radian )
 	{
-		float32 fSin = OSin(radian);
-		float32 fCos = OCos(radian);
+		float32 fSin = sinf(radian);
+		float32 fCos = cosf(radian);
 
-		vec1.Set(1.0f,  0.0f,  0.0f, 0.0f);
-		vec2.Set(0.0f,  fCos,  fSin, 0.0f);
-		vec3.Set(0.0f, -fSin,  fCos, 0.0f);
-		vec4.Set(0.0f,  0.0f,  0.0f, 1.0f);
+		vec1.Setf(1.0f,  0.0f,  0.0f, 0.0f);
+		vec2.Setf(0.0f,  fCos,  fSin, 0.0f);
+		vec3.Setf(0.0f, -fSin,  fCos, 0.0f);
+		vec4.Setf(0.0f,  0.0f,  0.0f, 1.0f);
+		return *this;
 	}
 
 	void RotateX( const float radian )
@@ -307,8 +441,8 @@ public:
 		float Temp00, Temp01, Temp02, Temp03;
 		float Temp20, Temp21, Temp22, Temp23;
 		
-		float32 Sin = OSin(radian);
-		float32 Cos = OCos(radian);
+		float32 Sin = sinf(radian);
+		float32 Cos = cosf(radian);
 
 		Temp00 = m11 * Cos - m31 * Sin;
 		Temp01 = m12 * Cos - m32 * Sin;
@@ -330,15 +464,16 @@ public:
 		m34 = Temp23;
 	}
 
-	void RotateY_Replace( const float radian )
+	OMatrix4x4& RotateY_Replace( const float radian )
 	{
 		float32 fSin = OSin(radian);
 		float32 fCos = OCos(radian);
 
-		vec1.Set( fCos,  0.0f, -fSin, 0.0f);
-		vec2.Set( 0.0f,  1.0f,  0.0f, 0.0f);
-		vec3.Set(-fSin,  0.0f,  fCos, 0.0f);
-		vec4.Set( 0.0f,  0.0f,  0.0f, 1.0f);
+		vec1.Setf( fCos,  0.0f, -fSin, 0.0f);
+		vec2.Setf( 0.0f,  1.0f,  0.0f, 0.0f);
+		vec3.Setf(-fSin,  0.0f,  fCos, 0.0f);
+		vec4.Setf( 0.0f,  0.0f,  0.0f, 1.0f);
+		return *this;
 	}
 
 	void RotateZ( const float radian )
@@ -346,8 +481,8 @@ public:
 		float Temp00, Temp01, Temp02, Temp03;
 		float Temp10, Temp11, Temp12, Temp13;
 
-		float32 Sin = OSin(radian);
-		float32 Cos = OCos(radian);
+		float32 Sin = sinf(radian);
+		float32 Cos = cosf(radian);
 
 		Temp00 = m11 * Cos + m21 * Sin;
 		Temp01 = m12 * Cos + m22 * Sin;
@@ -369,19 +504,83 @@ public:
 		m24 = Temp13;
 	}
 
-	void RotateZ_Replace( const float radian )
+	OMatrix4x4& RotateZ_Replace( const float radian )
 	{
-		float32 fSin = OSin(radian);
-		float32 fCos = OCos(radian);
+		float32 fSin = sinf(radian);
+		float32 fCos = cosf(radian);
 
-		vec1.Set( fCos,  fSin, 0.0f, 0.0f);
-		vec2.Set(-fSin,  fCos, 0.0f, 0.0f);
-		vec3.Set( 0.0f,  0.0f, 1.0f, 0.0f);
-		vec4.Set( 0.0f,  0.0f, 0.0f, 1.0f);
+		vec1.Setf( fCos,  fSin, 0.0f, 0.0f);
+		vec2.Setf(-fSin,  fCos, 0.0f, 0.0f);
+		vec3.Setf( 0.0f,  0.0f, 1.0f, 0.0f);
+		vec4.Setf( 0.0f,  0.0f, 0.0f, 1.0f);
+
+		return *this;
 	}
 
+ /** 输出4维矩阵中表示旋转,缩放的那个三维矩阵 
+     *	@param [Matrix3&] : 输出矩阵,Matrix3
+     */
+    inline void Extract3x3Matrix(OMatrix3x3& m3x3) const
+    {
+        m3x3.ele_f[0][0] = ele_f[0][0];
+        m3x3.ele_f[0][1] = ele_f[0][1];
+        m3x3.ele_f[0][2] = ele_f[0][2];
+        m3x3.ele_f[1][0] = ele_f[1][0];
+        m3x3.ele_f[1][1] = ele_f[1][1];
+        m3x3.ele_f[1][2] = ele_f[1][2];
+        m3x3.ele_f[2][0] = ele_f[2][0];
+        m3x3.ele_f[2][1] = ele_f[2][1];
+        m3x3.ele_f[2][2] = ele_f[2][2];
 
+    }
 
+	/// Bulk transpose matrices.
+	static void BulkTranspose(float* dest, const float* src, unsigned count)
+	{
+		for (unsigned i = 0; i < count; ++i)
+		{
+			dest[0] = src[0];
+			dest[1] = src[4];
+			dest[2] = src[8];
+			dest[3] = src[12];
+			dest[4] = src[1];
+			dest[5] = src[5];
+			dest[6] = src[9];
+			dest[7] = src[13];
+			dest[8] = src[2];
+			dest[9] = src[6];
+			dest[10] = src[10];
+			dest[11] = src[14];
+			dest[12] = src[3];
+			dest[13] = src[7];
+			dest[14] = src[11];
+			dest[15] = src[15];
+
+			dest += 16;
+			src += 16;
+		}
+	}
+
+	/** <<操作符重载，按行输出4*4矩阵 */
+	inline friend std::ostream& operator <<
+		( std::ostream& o, const OMatrix4x4& m )
+	{
+		o << "Matrix4x4(";
+		for (int i = 0; i < 4; ++i)
+		{
+			o << " row" << (unsigned)i << "{";
+			for(int j = 0; j < 4; ++j)
+			{
+				o << m[i][j] << " ";
+			}
+			o << "}";
+		}
+		o << ")";
+		return o;
+	}
+
+	/// Return float data
+	const float* Data() const { return &m11; }
 
 //////////////////////////////////////////////////////////////////////////
 //static
@@ -410,6 +609,28 @@ public:
 		vec4 *= f;
 		return *this;
 	}
+
+	/** *操作符重载，4*4矩阵的每个值都与参数标量相乘，返回相乘后的结果矩阵 */
+	inline OMatrix4x4 operator*(const float32 scalar)
+	{
+		return OMatrix4x4(
+			scalar*ele_f[0][0], scalar*ele_f[0][1], scalar*ele_f[0][2], scalar*ele_f[0][3],
+			scalar*ele_f[1][0], scalar*ele_f[1][1], scalar*ele_f[1][2], scalar*ele_f[1][3],
+			scalar*ele_f[2][0], scalar*ele_f[2][1], scalar*ele_f[2][2], scalar*ele_f[2][3],
+			scalar*ele_f[3][0], scalar*ele_f[3][1], scalar*ele_f[3][2], scalar*ele_f[3][3]);
+	}
+
+	OVector3 operator * (const OVector3& rhs) const
+	{
+		float invW = 1.0f / (m41 * rhs.x + m42 * rhs.y + m43 * rhs.z + m44);
+
+		return OVector3(
+			(m11 * rhs.x + m12 * rhs.y + m13 * rhs.z + m14) * invW,
+			(m21 * rhs.x + m22 * rhs.y + m23 * rhs.z + m24) * invW,
+			(m31 * rhs.x + m32 * rhs.y + m33 * rhs.z + m34) * invW
+			);
+	}
+
 
 	inline OVector4 &operator[](const int32 row)
 	{
@@ -469,8 +690,18 @@ public:
 		return *this;
 	}
 
+	/** ＝操作符重载，把参数3*3矩阵赋值给4*4矩阵，结果为4*4单位矩阵的前三行三列加上参数3*3矩阵 */
+	inline void operator = ( const OMatrix3x3& mat3 )
+	{
+		ele_f[0][0] = mat3.ele_f[0][0]; ele_f[0][1] = mat3.ele_f[0][1]; ele_f[0][2] = mat3.ele_f[0][2]; ele_f[0][3] = 0.0f;
+		ele_f[1][0] = mat3.ele_f[1][0]; ele_f[1][1] = mat3.ele_f[1][1]; ele_f[1][2] = mat3.ele_f[1][2]; ele_f[1][3] = 0.0f;
+		ele_f[2][0] = mat3.ele_f[2][0]; ele_f[2][1] = mat3.ele_f[2][1]; ele_f[2][2] = mat3.ele_f[2][2]; ele_f[2][3] = 0.0f;
+		ele_f[3][0] = 0.0f;			    ele_f[3][1] = 0.0f	;		    ele_f[3][2] = 0.0f;  		    ele_f[3][3] = 1.0f;
+	}
+
 	inline OMatrix4x4 &operator/=(const float32 f)
 	{
+		assert(f != 0.0f && "非法除数");
 		vec1 /= f;
 		vec2 /= f;
 		vec3 /= f;
@@ -491,6 +722,9 @@ inline bool operator!=(const OMatrix4x4 &a, const OMatrix4x4 &b)
 	bool result = a.vec1!=b.vec1 || a.vec2!=b.vec2 || a.vec3!=b.vec3 || a.vec4!=b.vec4;
 	return result;
 }
+
+
+
 
 /*
 inline OMatrix4x4 operator+(float f, OMatrix4x4 &a)
@@ -583,5 +817,16 @@ inline OMatrix4x4 operator*(OMatrix4x4 &a, OMatrix4x4 &b)
 
 	return result;
 }
+
+inline OMatrix4x4 operator * (const float32 lhs, const OMatrix4x4& rhs) 
+{
+	return OMatrix4x4(
+		lhs*rhs.ele_f[0][0], lhs*rhs.ele_f[0][1], lhs*rhs.ele_f[0][2], lhs*rhs.ele_f[0][3],
+		lhs*rhs.ele_f[1][0], lhs*rhs.ele_f[1][1], lhs*rhs.ele_f[1][2], lhs*rhs.ele_f[1][3],
+		lhs*rhs.ele_f[2][0], lhs*rhs.ele_f[2][1], lhs*rhs.ele_f[2][2], lhs*rhs.ele_f[2][3],
+		lhs*rhs.ele_f[3][0], lhs*rhs.ele_f[3][1], lhs*rhs.ele_f[3][2], lhs*rhs.ele_f[3][3]);
+
+}
+
 
 #endif/* File Is Over */
